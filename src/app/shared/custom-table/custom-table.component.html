@@ -1,0 +1,31 @@
+<p-table [columns]="columns" [value]="data">
+    <ng-template pTemplate="header" let-columns>
+        <tr>
+            <th *ngFor="let col of columns">
+                {{ col.header }}
+            </th>
+        </tr>
+    </ng-template>
+    
+    <ng-template pTemplate="body" let-rowData let-columns="columns">
+        <tr>
+            <td *ngFor="let col of columns">
+                <ng-container *ngIf="col.type !== 'actions'">
+                    {{ rowData[col.field] }}
+                </ng-container>
+
+                <div *ngIf="col.type === 'actions'" class="flex gap-2 align-items-center justify-content-end">
+                    <button 
+                        *ngFor="let action of col.actions"
+                        pButton 
+                        type="button" 
+                        [icon]="action.icon"
+                        [label]="action.label"
+                        [class]="action.class"
+                        (click)="onButtonClick($event, rowData, col.field, action.actionId)">
+                    </button>
+                </div>
+            </td>
+        </tr>
+    </ng-template>
+</p-table>
