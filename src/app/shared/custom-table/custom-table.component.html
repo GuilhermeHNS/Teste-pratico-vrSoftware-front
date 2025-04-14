@@ -1,4 +1,9 @@
 <p-table [columns]="columns" [value]="data">
+    <ng-template #caption *ngIf="showHeaderButton">
+        <div class="flex items-center justify-between">
+            <p-button [icon]="iconHeaderButton" rounded raised severity="secondary"/>
+        </div>
+    </ng-template>
     <ng-template pTemplate="header" let-columns>
         <tr>
             <th *ngFor="let col of columns">

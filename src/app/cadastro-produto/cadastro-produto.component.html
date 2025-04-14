@@ -1,0 +1,31 @@
+<nav class="nav-title flex align-items-center justify-content-between">
+    <p-button icon="pi pi-save" [text]="true" class="mr-2" severity="secondary" />
+    <p-button icon="pi pi-trash" [text]="true" class="mr-2" severity="secondary" />
+    <h3 class="m-0 mx-auto">Cadastro de Produto</h3>
+</nav>
+
+
+<section>
+    <div class="dados-cadastro">
+        <form class="filters" [formGroup]="produtoForm">
+            <div class="input-label">
+                <label>Código</label>
+                <input pInputText pKeyFilter="int" pSize="large" formControlName="codigo" />
+            </div>
+
+            <div class="input-label">
+                <label>Descrição</label>
+                <input pInputText pSize="large" style="width: 300px;" formControlName="descricao" />
+            </div>
+
+            <div class="input-label">
+                <label>Custo</label>
+                <input pInputText pKeyFilter="money" pSize="large" formControlName="custo" />
+            </div>
+        </form>
+
+        <app-custom-table [columns]="cols" [data]="produtoLojaList" [showHeaderButton]="true" [iconHeaderButton]="'pi pi-plus'"
+            (buttonClick)="handleButtonClick($event)" (buttonHeaderClick)="openCadastroDialog($event)"></app-custom-table>
+
+    </div>
+</section>

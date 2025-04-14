@@ -1,15 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { KeyFilterModule } from 'primeng/keyfilter';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { Produto } from '../models/Produto';
 import { ProdutoService } from '../services/produto.service';
 import { CustomTableComponent } from '../shared/custom-table/custom-table.component';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService } from 'primeng/api';
 
 
 interface Column {
@@ -33,7 +34,7 @@ interface Column {
 })
 export class ProdutoComponent implements OnInit, OnDestroy {
 
-  constructor(private confirmationService: ConfirmationService) { }
+  constructor(private confirmationService: ConfirmationService, private router: Router) { }
 
   private fb = inject(FormBuilder);
   private produtoService = inject(ProdutoService);
@@ -121,9 +122,6 @@ export class ProdutoComponent implements OnInit, OnDestroy {
     this.produtoService.buscaProdutos(filtros).subscribe({
       next: (produtos: Produto[]) => {
         this.produtos = produtos;
-      },
-      error: (error) => {
-        console.error(error)
       }
     })
   }
@@ -163,18 +161,16 @@ export class ProdutoComponent implements OnInit, OnDestroy {
     })
   }
 
-  editarProduto(produto: any) {
-    console.log('Editar:', produto);
-    // Lógica de edição aqui
+  editarProduto(produto: Produto) {
+    this.router.navigate(['/produto/cadastro'], {
+      state: { produto: produto } 
+    });
   }
 
   excluirProduto(id: number) {
     this.produtoService.excluiProduto(id).subscribe({
       next: () => {
         this.buscaProdutos();
-      },
-      error: (error) => {
-        console.error(error)
       }
     })
   }

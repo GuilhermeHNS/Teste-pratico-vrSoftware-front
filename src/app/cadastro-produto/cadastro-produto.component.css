@@ -1,0 +1,11 @@
+section{
+    display: flex;
+    flex-direction: row;
+}
+
+.dados-cadastro {
+    display: flex;
+    flex-direction: column;
+    width: 60%;
+    gap: 5px;
+}

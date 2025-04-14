@@ -22,7 +22,10 @@ export class CustomTableComponent {
   @Input() columns: Column[] = [];
   @Input() data: any[] = [];
   @Input() tableStyle: any = { 'width': '100%' };
+  @Input() showHeaderButton: boolean = false;
+  @Input() iconHeaderButton: string = '';
   @Output() buttonClick = new EventEmitter<{ event: Event, rowData: any, field: string, actionId: string}>();
+  @Output() buttonHeaderClick = new EventEmitter<{event: Event}>();
 
   onButtonClick(event: Event, rowData: any, field: string, actionId: string) {
     this.buttonClick.emit({
@@ -30,6 +33,12 @@ export class CustomTableComponent {
       rowData,
       field,
       actionId
+    });
+  }
+
+  onButtonHeaderClick(event: Event) {
+    this.buttonHeaderClick.emit({
+      event
     });
   }
 }
