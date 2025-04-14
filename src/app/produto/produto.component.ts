@@ -8,26 +8,33 @@ import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { Produto } from '../models/Produto';
 import { ProdutoService } from '../services/produto.service';
 import { CustomTableComponent } from '../shared/custom-table/custom-table.component';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
+
 
 interface Column {
   field: string;
   header: string;
-  type?: 'text' | 'actions'; // 👈 Novo tipo
+  type?: 'text' | 'actions' | 'currency';
   actions?: Array<{
     icon?: string;
     label?: string;
     class?: string;
-    actionId: string; // Identificador único para cada ação
+    actionId: string;
   }>;
 }
 
 @Component({
   selector: 'app-produto',
-  imports: [CommonModule, ButtonModule, KeyFilterModule, InputTextModule, ReactiveFormsModule, CustomTableComponent],
+  imports: [CommonModule, ButtonModule, KeyFilterModule, InputTextModule, ReactiveFormsModule, CustomTableComponent, ConfirmDialogModule],
+  providers:[ConfirmationService],
   templateUrl: './produto.component.html',
   styleUrl: './produto.component.css'
 })
 export class ProdutoComponent implements OnInit, OnDestroy {
+
+  constructor(private confirmationService: ConfirmationService) { }
+
   private fb = inject(FormBuilder);
   private produtoService = inject(ProdutoService);
   private destroy$ = new Subject<void>();
@@ -41,7 +48,7 @@ export class ProdutoComponent implements OnInit, OnDestroy {
   }>;
 
   produtos!: Produto[];
-  cols!: any[];
+  cols!: Column[];
 
   ngOnInit(): void {
     this.inicializaForm();
@@ -51,7 +58,7 @@ export class ProdutoComponent implements OnInit, OnDestroy {
     this.cols = [
       { field: 'id', header: 'Código' },
       { field: 'descricao', header: 'Descrição' },
-      { field: 'custo', header: 'Custo' },
+      { field: 'custo', header: 'Custo' , type: 'currency'},
       {
         field: '',
         header: '',
@@ -121,20 +128,39 @@ export class ProdutoComponent implements OnInit, OnDestroy {
     })
   }
 
-  handleButtonClick(event: { 
-    event: Event, 
-    rowData: any, 
-    field: string, 
-    actionId: string 
+  handleButtonClick(event: {
+    event: Event,
+    rowData: any,
+    field: string,
+    actionId: string
   }) {
-    switch(event.actionId) {
+    switch (event.actionId) {
       case 'editar':
         this.editarProduto(event.rowData);
         break;
       case 'excluir':
-        this.excluirProduto(event.rowData);
+        this.confirmarExclusaoProduto(event.rowData);
         break;
     }
+  }
+
+  private confirmarExclusaoProduto(produto: Produto) {
+    this.confirmationService.confirm({
+      message: 'Deseja confirmar a exclusão desse produto?',
+      header: 'Atenção!',
+      icon: 'pi pi-info-circle',
+      rejectLabel: 'Cancel',
+      rejectButtonProps: {
+        label: 'Cancel',
+        severity: 'secondary',
+        outlined: true,
+      },
+      acceptButtonProps: {
+        label: 'Delete',
+        severity: 'danger',
+      },
+      accept: () => this.excluirProduto(produto.id)
+    })
   }
 
   editarProduto(produto: any) {
@@ -142,9 +168,15 @@ export class ProdutoComponent implements OnInit, OnDestroy {
     // Lógica de edição aqui
   }
 
-  excluirProduto(produto: any) {
-    console.log('Excluir:', produto);
-    // Lógica de exclusão aqui
+  excluirProduto(id: number) {
+    this.produtoService.excluiProduto(id).subscribe({
+      next: () => {
+        this.buscaProdutos();
+      },
+      error: (error) => {
+        console.error(error)
+      }
+    })
   }
 
   get codigo() { return this.produtoForm.controls.codigo; }

@@ -6,22 +6,21 @@
             </th>
         </tr>
     </ng-template>
-    
+
     <ng-template pTemplate="body" let-rowData let-columns="columns">
         <tr>
             <td *ngFor="let col of columns">
-                <ng-container *ngIf="col.type !== 'actions'">
+                <ng-container *ngIf="col.type !== 'actions' && col.type !== 'currency'">
                     {{ rowData[col.field] }}
                 </ng-container>
 
+                <ng-container *ngIf="col.type === 'currency'">
+                    {{rowData[col.field] | currency:'BRL':'symbol':'1.2-2'}}
+                </ng-container>
+
                 <div *ngIf="col.type === 'actions'" class="flex gap-2 align-items-center justify-content-end">
-                    <button 
-                        *ngFor="let action of col.actions"
-                        pButton 
-                        type="button" 
-                        [icon]="action.icon"
-                        [label]="action.label"
-                        [class]="action.class"
+                    <button *ngFor="let action of col.actions" pButton type="button" [icon]="action.icon"
+                        [label]="action.label" [class]="action.class"
                         (click)="onButtonClick($event, rowData, col.field, action.actionId)">
                     </button>
                 </div>

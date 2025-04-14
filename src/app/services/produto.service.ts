@@ -34,4 +34,9 @@ export class ProdutoService {
     }
     return this.http.get<Produto[]>(this.apiUrl, { params });
   }
+
+  excluiProduto(id: number): Observable<Produto> {
+    return this.http.delete<Produto>(`${this.apiUrl}/${id}`);
+  }
+
 }
