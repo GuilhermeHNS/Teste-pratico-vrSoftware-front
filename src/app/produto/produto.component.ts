@@ -34,9 +34,9 @@ interface Column {
 })
 export class ProdutoComponent implements OnInit, OnDestroy {
 
-  constructor(private confirmationService: ConfirmationService, private router: Router) { }
-
   private fb = inject(FormBuilder);
+  private confirmationService = inject(ConfirmationService);
+  private router = inject(Router);
   private produtoService = inject(ProdutoService);
   private destroy$ = new Subject<void>();
 
@@ -149,12 +149,12 @@ export class ProdutoComponent implements OnInit, OnDestroy {
       icon: 'pi pi-info-circle',
       rejectLabel: 'Cancel',
       rejectButtonProps: {
-        label: 'Cancel',
+        label: 'Cancelar',
         severity: 'secondary',
         outlined: true,
       },
       acceptButtonProps: {
-        label: 'Delete',
+        label: 'Deletar',
         severity: 'danger',
       },
       accept: () => this.excluirProduto(produto.id)

@@ -1,7 +1,7 @@
 <p-table [columns]="columns" [value]="data">
     <ng-template #caption *ngIf="showHeaderButton">
         <div class="flex items-center justify-between">
-            <p-button [icon]="iconHeaderButton" rounded raised severity="secondary"/>
+            <p-button [icon]="iconHeaderButton" rounded raised severity="secondary" (onClick)="onButtonHeaderClick($event)"/>
         </div>
     </ng-template>
     <ng-template pTemplate="header" let-columns>

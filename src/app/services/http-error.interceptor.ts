@@ -1,17 +1,17 @@
 // http-error.interceptor.ts
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { MessageService } from 'primeng/api';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
+import { ComumService } from './comum.service';
 
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
-  const messageService = inject(MessageService);
+  const comumService = inject(ComumService);
   const router = inject(Router);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      handleError(error, messageService, router);
+      handleError(error, comumService, router);
       return throwError(() => error);
     })
   );
@@ -19,7 +19,7 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
 
 const handleError = (
   error: HttpErrorResponse,
-  messageService: MessageService,
+  comumService: ComumService,
   router: Router
 ): void => {
   let summary = 'Erro';
@@ -47,11 +47,5 @@ const handleError = (
       detail = error.error?.message || 'Problema no servidor';
       break;
   }
-
-  messageService.add({
-    severity: 'error',
-    summary,
-    detail,
-    life: 5000
-  });
+  comumService.openMessageError(summary, detail)
 };
