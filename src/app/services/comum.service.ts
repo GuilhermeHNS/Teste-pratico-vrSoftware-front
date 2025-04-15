@@ -15,4 +15,13 @@ export class ComumService {
       life: 5000
     });
   }
+
+  openSuccessMessage(summary: string, detail: string) {
+    this.messageService.add({
+      severity: 'success',
+      summary,
+      detail,
+      life: 5000
+    });
+  }
 }

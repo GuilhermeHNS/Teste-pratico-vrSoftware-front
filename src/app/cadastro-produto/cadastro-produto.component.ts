@@ -11,7 +11,7 @@ import { KeyFilterModule } from 'primeng/keyfilter';
 import { SelectModule } from 'primeng/select';
 import { Subject } from 'rxjs';
 import { Loja } from '../models/loja';
-import { Produto } from '../models/Produto';
+import { Produto } from '../models/produto';
 import { ProdutoLoja } from '../models/produto-Loja';
 import { ComumService } from '../services/comum.service';
 import { LojaService } from '../services/loja.service';
@@ -30,6 +30,25 @@ interface Column {
     class?: string;
     actionId: string;
   }>;
+}
+
+interface CreateProdutoDto {
+  descricao: string;
+  custo?: number;
+}
+
+interface CreateProdutoLojaDto {
+  idProduto: number;
+  idLoja: number;
+  precoVenda: number;
+}
+
+interface CreateProdutoLojaListDto {
+  itens: CreateProdutoLojaDto[]
+}
+
+interface DeleteProdutoLojaListDto {
+  ids: number[]
 }
 
 @Component({
@@ -69,7 +88,6 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
   }>;
 
   produto!: Produto;
-  newProduto!: Produto;
   produtoLojaList!: ProdutoLoja[]
   produtoLojaEdicao!: ProdutoLoja;
   newProdutoLoja: ProdutoLoja[] = [];
@@ -107,12 +125,16 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
     ]
 
     if (this.produto) {
-      this.codigo.setValue(this.produto.id);
-      this.descricao.setValue(this.produto.descricao);
-      this.custo.setValue(this.produto.custo)
+      this.inicializaValoresProduto();
       this.carregaProdutoLojaPorProduto(this.produto.id)
     }
 
+  }
+
+  inicializaValoresProduto() {
+    this.codigo.setValue(this.produto.id);
+    this.descricao.setValue(this.produto.descricao);
+    this.custo.setValue(this.produto.custo)
   }
 
   ngOnDestroy(): void {
@@ -122,10 +144,9 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
 
   private inicializaForm() {
     this.produtoForm = this.fb.group({
-      codigo: new FormControl<number | null>(null, [
-        Validators.min(1)
-      ]),
+      codigo: new FormControl<number | null>(null),
       descricao: new FormControl<string | null>(null, [
+        Validators.required,
         Validators.maxLength(60)
       ]),
       custo: new FormControl<number | null>(null, [
@@ -164,7 +185,7 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
         this.openCadastroDialog(event.rowData);
         break;
       case 'excluir':
-        this.confirmarExclusaoProdutoLoja(event.rowData)
+        this.removeProdutoLoja(event.rowData)
         break;
     }
   }
@@ -176,6 +197,92 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
       this.precoVenda.setValue(this.produtoLojaEdicao.precoVenda)
     }
   }
+
+  validaSalvamento() {
+    // if (!this.produto) {
+    //   if (this.produtoForm.invalid) {
+    //     this.comumService.openMessageError("Campos Obrigatórios!", "Um ou mais campos obrigatórios não foram preenchidos corretamente");
+    //     throw new Error();
+    //   }
+    //   this.salvaProduto();
+    // }
+
+    // if (this.produto && (this.custo.value !== this.produto.custo || this.descricao.value !== this.produto.descricao)) {
+    //   this.atualizaProduto();
+    // }
+
+    // if (this.newProdutoLoja.length > 0) {
+    //   this.salvaProdutoLoja();
+    // }
+
+    if (this.idProdutoLojaDelete.length > 0) {
+      this.apagaProdutoLojaList();
+    }
+
+  }
+
+  private salvaProduto() {
+    let createProduto: CreateProdutoDto = {
+      descricao: this.descricao.value || ''
+    }
+    if (this.custo.value) {
+      createProduto.custo = Number(this.custo.value)
+    }
+    this.produtoService.cadastraProduto(createProduto).subscribe({
+      next: (produto: Produto) => {
+        this.comumService.openSuccessMessage("Sucesso", "O produto foi salvo com sucesso!")
+        this.produto = produto;
+        this.inicializaValoresProduto();
+      }
+    })
+  }
+
+  private atualizaProduto() {
+    let createProduto: CreateProdutoDto = {
+      descricao: this.descricao.value || '',
+      custo: Number(this.custo.value || 0)
+    }
+
+    this.produtoService.atualizaProduto(createProduto, this.produto.id).subscribe({
+      next: (produto: Produto) => {
+        this.comumService.openSuccessMessage("Sucesso", "O produto foi alterado com sucesso!")
+        this.produto = produto,
+          this.inicializaValoresProduto();
+      }
+    })
+
+  }
+
+  private salvaProdutoLoja() {
+    let reqList: CreateProdutoLojaListDto = {
+      itens: this.newProdutoLoja.map((produtoLoja) => {
+        return {
+          idProduto: this.produto.id,
+          idLoja: produtoLoja.idLoja,
+          precoVenda: Number(produtoLoja.precoVenda)
+        }
+      })
+    }
+    this.produtoLojaService.cadastraProdutoLojaList(reqList).subscribe({
+      next: () => {
+        this.comumService.openSuccessMessage("Sucesso", "Os itens foram salvos com sucesso!")
+      }
+    })
+  }
+
+  private apagaProdutoLojaList() {
+    let reqList: DeleteProdutoLojaListDto =  {
+      ids: this.idProdutoLojaDelete
+    }
+
+    this.produtoLojaService.apagaProdutoLojaList(reqList).subscribe({
+      next:() => {
+        this.comumService.openSuccessMessage("Sucesso", "Os itens foram deletados com sucesso!");
+        this.idProdutoLojaDelete = [];
+      }
+    })
+  }
+
 
   openCadastroDialog(produtoLoja?: ProdutoLoja) {
     if (produtoLoja) {
@@ -193,7 +300,7 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
 
   private confirmarExclusaoProdutoLoja(produtoLoja: ProdutoLoja) {
     this.confirmationService.confirm({
-      message: 'Deseja confirmar a exclusão desse registro?',
+      message: 'Deseja confirmar a exclusão desse(s) registro(s)?',
       header: 'Atenção!',
       icon: 'pi pi-info-circle',
       rejectLabel: 'Cancel',
@@ -211,13 +318,19 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
   }
 
   private excluirProdutoLoja(id: number) {
-    this.produtoLojaService.apagaProdutoLoja(id).subscribe({
-      next: () => {
-        if (this.produto) {
-          this.carregaProdutoLojaPorProduto(this.produto.id)
-        }
+
+  }
+
+  private removeProdutoLoja(produtoLoja: ProdutoLoja) {
+    if (this.newProdutoLoja.includes(produtoLoja)) {
+      this.newProdutoLoja.splice(this.newProdutoLoja.indexOf(produtoLoja), 1);
+    } else {
+      if (this.idProdutoLojaUpdate.includes(produtoLoja.id)) {
+        this.idProdutoLojaUpdate.splice(this.idProdutoLojaUpdate.indexOf(produtoLoja.id), 1);
       }
-    })
+      this.idProdutoLojaDelete.push(Number(produtoLoja.id));
+    }
+    this.produtoLojaList.splice(this.produtoLojaList.indexOf(produtoLoja), 1);
   }
 
   confirmarExclusaoProduto() {

@@ -8,7 +8,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { KeyFilterModule } from 'primeng/keyfilter';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
-import { Produto } from '../models/Produto';
+import { Produto } from '../models/produto';
 import { ProdutoService } from '../services/produto.service';
 import { CustomTableComponent } from '../shared/custom-table/custom-table.component';
 
@@ -134,7 +134,7 @@ export class ProdutoComponent implements OnInit, OnDestroy {
   }) {
     switch (event.actionId) {
       case 'editar':
-        this.editarProduto(event.rowData);
+        this.navegaParaCadastro(event.rowData);
         break;
       case 'excluir':
         this.confirmarExclusaoProduto(event.rowData);
@@ -161,7 +161,7 @@ export class ProdutoComponent implements OnInit, OnDestroy {
     })
   }
 
-  editarProduto(produto: Produto) {
+  navegaParaCadastro(produto?: Produto) {
     this.router.navigate(['/produto/cadastro'], {
       state: { produto: produto } 
     });

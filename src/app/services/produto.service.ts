@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Produto } from '../models/Produto';
+import { Produto } from '../models/produto';
 
 interface FiltrosProduto {
   codigo?: number,
@@ -33,6 +33,14 @@ export class ProdutoService {
       });
     }
     return this.http.get<Produto[]>(this.apiUrl, { params });
+  }
+
+  cadastraProduto(createProdutoDto: any): Observable<Produto> {
+    return this.http.post<Produto>(this.apiUrl, createProdutoDto);
+  }
+
+  atualizaProduto(createProdutoDto: any, id: number): Observable<Produto> {
+    return this.http.patch<Produto>(`${this.apiUrl}/${id}`, createProdutoDto);
   }
 
   excluiProduto(id: number): Observable<Produto> {
