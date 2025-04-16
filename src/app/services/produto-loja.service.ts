@@ -3,6 +3,7 @@ import { environment } from '../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { ProdutoLoja } from '../models/produto-Loja';
+import { CreateProdutoLojaDto } from '../cadastro-produto/cadastro-produto.component';
 
 @Injectable({
   providedIn: 'root'
@@ -20,12 +21,12 @@ export class ProdutoLojaService {
     return this.http.delete<ProdutoLoja>(`${this.apiUrl}/${id}`);
   }
 
-  cadastraProdutoLojaList(req: any): Observable<ProdutoLoja[]> {
-    return this.http.post<ProdutoLoja[]>(`${this.apiUrl}/bulk`, req)
+  cadastraProdutoLoja(req: CreateProdutoLojaDto): Observable<ProdutoLoja> {
+    return this.http.post<ProdutoLoja>(`${this.apiUrl}`, req)
   }
 
-  apagaProdutoLojaList(req: any): Observable<ProdutoLoja> {
-    return this.http.delete<ProdutoLoja>(`${this.apiUrl}/bulk`, { body: req })
+  atualizaProdutoLoja(req: CreateProdutoLojaDto, id: number): Observable<ProdutoLoja> {
+    return this.http.patch<ProdutoLoja>(`${this.apiUrl}/${id}`, req);
   }
 
 }

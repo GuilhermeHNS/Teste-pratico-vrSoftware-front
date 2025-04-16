@@ -37,19 +37,13 @@ interface CreateProdutoDto {
   custo?: number;
 }
 
-interface CreateProdutoLojaDto {
-  idProduto: number;
-  idLoja: number;
-  precoVenda: number;
+export interface CreateProdutoLojaDto {
+  idProduto: number,
+  idLoja: number,
+  precoVenda: number
 }
 
-interface CreateProdutoLojaListDto {
-  itens: CreateProdutoLojaDto[]
-}
 
-interface DeleteProdutoLojaListDto {
-  ids: number[]
-}
 
 @Component({
   selector: 'app-cadastro-produto',
@@ -90,9 +84,6 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
   produto!: Produto;
   produtoLojaList!: ProdutoLoja[]
   produtoLojaEdicao!: ProdutoLoja;
-  newProdutoLoja: ProdutoLoja[] = [];
-  idProdutoLojaUpdate: number[] = [];
-  idProdutoLojaDelete: number[] = [];
 
   lojaList!: Loja[];
   cols: Column[] = [];
@@ -185,7 +176,7 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
         this.openCadastroDialog(event.rowData);
         break;
       case 'excluir':
-        this.removeProdutoLoja(event.rowData)
+        this.confirmarExclusaoProdutoLoja(event.rowData)
         break;
     }
   }
@@ -199,26 +190,24 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
   }
 
   validaSalvamento() {
-    // if (!this.produto) {
-    //   if (this.produtoForm.invalid) {
-    //     this.comumService.openMessageError("Campos Obrigatórios!", "Um ou mais campos obrigatórios não foram preenchidos corretamente");
-    //     throw new Error();
-    //   }
-    //   this.salvaProduto();
-    // }
-
-    // if (this.produto && (this.custo.value !== this.produto.custo || this.descricao.value !== this.produto.descricao)) {
-    //   this.atualizaProduto();
-    // }
-
-    // if (this.newProdutoLoja.length > 0) {
-    //   this.salvaProdutoLoja();
-    // }
-
-    if (this.idProdutoLojaDelete.length > 0) {
-      this.apagaProdutoLojaList();
+    if (this.produtoForm.invalid) {
+      this.comumService.openMessageError("Campos Obrigatórios!", "Um ou mais campos obrigatórios não foram preenchidos corretamente");
+      throw new Error();
     }
 
+    if (!this.produto) {
+      this.salvaProduto();
+      return;
+    }
+
+    let novaDescricao = this.descricao.value;
+    let novoCusto = this.custo.value;
+    let descricao = this.produto.descricao;
+    let custo = this.produto.custo;
+
+    if (novaDescricao !== descricao || novoCusto !== custo) {
+      this.atualizaProduto();
+    }
   }
 
   private salvaProduto() {
@@ -253,40 +242,15 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
 
   }
 
-  private salvaProdutoLoja() {
-    let reqList: CreateProdutoLojaListDto = {
-      itens: this.newProdutoLoja.map((produtoLoja) => {
-        return {
-          idProduto: this.produto.id,
-          idLoja: produtoLoja.idLoja,
-          precoVenda: Number(produtoLoja.precoVenda)
-        }
-      })
-    }
-    this.produtoLojaService.cadastraProdutoLojaList(reqList).subscribe({
-      next: () => {
-        this.comumService.openSuccessMessage("Sucesso", "Os itens foram salvos com sucesso!")
-      }
-    })
-  }
-
-  private apagaProdutoLojaList() {
-    let reqList: DeleteProdutoLojaListDto =  {
-      ids: this.idProdutoLojaDelete
-    }
-
-    this.produtoLojaService.apagaProdutoLojaList(reqList).subscribe({
-      next:() => {
-        this.comumService.openSuccessMessage("Sucesso", "Os itens foram deletados com sucesso!");
-        this.idProdutoLojaDelete = [];
-      }
-    })
-  }
-
-
   openCadastroDialog(produtoLoja?: ProdutoLoja) {
+    if (!this.produto) {
+      this.comumService.openMessageError("Produto necessário!", "É necessário cadastrar um produto para poder cadastrar preços de venda!")
+      throw new Error();
+    }
+    this.loja.enable();
     if (produtoLoja) {
       this.produtoLojaEdicao = produtoLoja;
+      this.loja.disable();
     }
     this.dialogPreco = true;
     this.carregaLojas();
@@ -318,20 +282,14 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
   }
 
   private excluirProdutoLoja(id: number) {
-
-  }
-
-  private removeProdutoLoja(produtoLoja: ProdutoLoja) {
-    if (this.newProdutoLoja.includes(produtoLoja)) {
-      this.newProdutoLoja.splice(this.newProdutoLoja.indexOf(produtoLoja), 1);
-    } else {
-      if (this.idProdutoLojaUpdate.includes(produtoLoja.id)) {
-        this.idProdutoLojaUpdate.splice(this.idProdutoLojaUpdate.indexOf(produtoLoja.id), 1);
+    this.produtoLojaService.apagaProdutoLoja(id).subscribe({
+      next: (produtoLoja: ProdutoLoja) => {
+        this.carregaProdutoLojaPorProduto(this.produto.id)
+        this.comumService.openSuccessMessage('Sucesso!', 'Registro deletado com sucesso!')
       }
-      this.idProdutoLojaDelete.push(Number(produtoLoja.id));
-    }
-    this.produtoLojaList.splice(this.produtoLojaList.indexOf(produtoLoja), 1);
+    })
   }
+
 
   confirmarExclusaoProduto() {
     this.confirmationService.confirm({
@@ -355,6 +313,7 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
   private excluiProduto() {
     this.produtoService.excluiProduto(this.produto.id).subscribe({
       next: () => {
+        this.comumService.openSuccessMessage('Sucesso!', 'O produto e seus registros correspondentes foram deletados com sucesso!')
         this.router.navigate([['/produto']]);
       }
     })
@@ -383,42 +342,46 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
     );
 
     if (this.produtoLojaEdicao) {
+      produtoLoja.id = this.produtoLojaEdicao.id;
       this.alteraProdutoLoja(produtoLoja);
       this.closeDialogPreco();
       return;
     }
 
-    this.newProdutoLoja.push(produtoLoja);
-    this.produtoLojaList.push(produtoLoja);
+    this.salvaProdutoLoja(produtoLoja);
     this.lojaPrecoVendaForm.reset();
   }
 
-  alteraProdutoLoja(produtoLoja: ProdutoLoja) {
-    const idLojaAlterado = produtoLoja.idLoja !== this.produtoLojaEdicao.idLoja;
-    const precoVendaAlterado = produtoLoja.precoVenda !== this.produtoLojaEdicao.precoVenda;
-
-    if (idLojaAlterado || precoVendaAlterado) {
-      const index = this.produtoLojaList.findIndex(pl => pl.id === this.produtoLojaEdicao?.id);
-
-      if (index === -1) return;
-      this.produtoLojaList = this.produtoLojaList.map((item, i) => {
-        if (i !== index) return item;
-        if (item.id > 0) {
-          this.idProdutoLojaUpdate.push(item.id)
-        } else {
-          let index = this.newProdutoLoja.findIndex((l) => l.id == item.id);
-          this.newProdutoLoja[index] = produtoLoja;
-        }
-        const lojaEncontrada = this.lojaList.find(l => l.id === produtoLoja.idLoja);
-        return {
-          ...item,
-          idLoja: produtoLoja.idLoja,
-          descricao: lojaEncontrada?.descricao ?? '',
-          precoVenda: produtoLoja.precoVenda
-        };
-      });
+  private alteraProdutoLoja(produtoLoja: ProdutoLoja) {
+    let req: CreateProdutoLojaDto = {
+      idProduto: this.produto.id,
+      idLoja: produtoLoja.idLoja,
+      precoVenda: Number(produtoLoja.precoVenda)
     }
+
+    this.produtoLojaService.atualizaProdutoLoja(req, produtoLoja.id).subscribe({
+      next: (novoProdutoLoja: ProdutoLoja) => {
+        this.carregaProdutoLojaPorProduto(this.produto.id)
+        this.comumService.openSuccessMessage('Sucesso!', 'Registro atualizado com sucesso!')
+      }
+    })
   }
+
+  private salvaProdutoLoja(produtoLoja: ProdutoLoja) {
+    let req: CreateProdutoLojaDto = {
+      idProduto: this.produto.id,
+      idLoja: produtoLoja.idLoja,
+      precoVenda: Number(produtoLoja.precoVenda)
+    }
+
+    this.produtoLojaService.cadastraProdutoLoja(req).subscribe({
+      next: (novoProdutoLoja: ProdutoLoja) => {
+        this.carregaProdutoLojaPorProduto(this.produto.id)
+        this.comumService.openSuccessMessage('Sucesso!', 'Registro criado com sucesso!')
+      }
+    })
+  }
+
 
   get codigo() { return this.produtoForm.controls.codigo; }
   get descricao() { return this.produtoForm.controls.descricao; }
