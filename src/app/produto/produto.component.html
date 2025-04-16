@@ -30,7 +30,10 @@
         [columns]="cols"
         [data]="produtos"
         [showHeaderButton]="false"
+        [isLazyLoad]="true"
+        [totalRecords]="totalRecords"
         (buttonClick)="handleButtonClick($event)"
+        (lazyLoadEvent)="lazyLoadEvent($event)"
     ></app-custom-table>
     <p-confirmdialog />
 

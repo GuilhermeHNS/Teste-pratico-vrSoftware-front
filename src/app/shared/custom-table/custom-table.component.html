@@ -1,7 +1,8 @@
-<p-table [columns]="columns" [value]="data">
+<p-table [columns]="columns" [value]="data" [lazy]="true" [paginator]="true" [rows]="10" [totalRecords]="totalRecords" (onLazyLoad)="loadData($event)">
     <ng-template #caption *ngIf="showHeaderButton">
         <div class="flex items-center justify-between">
-            <p-button [icon]="iconHeaderButton" rounded raised severity="secondary" (onClick)="onButtonHeaderClick($event)"/>
+            <p-button [icon]="iconHeaderButton" rounded raised severity="secondary"
+                (onClick)="onButtonHeaderClick($event)" />
         </div>
     </ng-template>
     <ng-template pTemplate="header" let-columns>

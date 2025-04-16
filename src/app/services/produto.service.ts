@@ -3,6 +3,7 @@ import { environment } from '../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Produto } from '../models/produto';
+import { PaginationModel } from '../models/pagination.model';
 
 interface FiltrosProduto {
   codigo?: number,
@@ -19,8 +20,10 @@ export class ProdutoService {
 
   constructor(private http: HttpClient) { }
 
-  buscaProdutos(filtros?: FiltrosProduto): Observable<Produto[]> {
+  buscaProdutos(page: number, limit: number, filtros?: FiltrosProduto): Observable<PaginationModel> {
     let params = new HttpParams();
+    params = params.append("page", page.toString());
+    params = params.append("limit", limit.toString());  
     if (filtros) {
       (Object.keys(filtros) as Array<keyof FiltrosProduto>).forEach(key => {
         const value = filtros[key];
@@ -32,7 +35,7 @@ export class ProdutoService {
         }
       });
     }
-    return this.http.get<Produto[]>(this.apiUrl, { params });
+    return this.http.get<PaginationModel>(this.apiUrl, { params });
   }
 
   cadastraProduto(createProdutoDto: any): Observable<Produto> {

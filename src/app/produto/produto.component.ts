@@ -11,6 +11,8 @@ import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { Produto } from '../models/produto';
 import { ProdutoService } from '../services/produto.service';
 import { CustomTableComponent } from '../shared/custom-table/custom-table.component';
+import { ComumService } from '../services/comum.service';
+import { TableLazyLoadEvent } from 'primeng/table';
 
 
 interface Column {
@@ -28,7 +30,7 @@ interface Column {
 @Component({
   selector: 'app-produto',
   imports: [CommonModule, ButtonModule, KeyFilterModule, InputTextModule, ReactiveFormsModule, CustomTableComponent, ConfirmDialogModule],
-  providers:[ConfirmationService],
+  providers: [ConfirmationService],
   templateUrl: './produto.component.html',
   styleUrl: './produto.component.css'
 })
@@ -36,6 +38,7 @@ export class ProdutoComponent implements OnInit, OnDestroy {
 
   private fb = inject(FormBuilder);
   private confirmationService = inject(ConfirmationService);
+  private comumService = inject(ComumService);
   private router = inject(Router);
   private produtoService = inject(ProdutoService);
   private destroy$ = new Subject<void>();
@@ -50,16 +53,18 @@ export class ProdutoComponent implements OnInit, OnDestroy {
 
   produtos!: Produto[];
   cols!: Column[];
+  pageProdutos: number = 1;
+  limitDadosProdutos: number = 10;
+  totalRecords: number = 0;
 
   ngOnInit(): void {
     this.inicializaForm();
     this.configurarObservables();
-    this.buscaProdutos();
 
     this.cols = [
       { field: 'id', header: 'Código' },
       { field: 'descricao', header: 'Descrição' },
-      { field: 'custo', header: 'Custo' , type: 'currency'},
+      { field: 'custo', header: 'Custo', type: 'currency' },
       {
         field: '',
         header: '',
@@ -119,9 +124,10 @@ export class ProdutoComponent implements OnInit, OnDestroy {
   }
 
   private buscaProdutos(filtros?: any) {
-    this.produtoService.buscaProdutos(filtros).subscribe({
-      next: (produtos: Produto[]) => {
-        this.produtos = produtos;
+    this.produtoService.buscaProdutos(this.pageProdutos, this.limitDadosProdutos, filtros).subscribe({
+      next: result => {
+        this.produtos = result.data;
+        this.totalRecords = result.total;
       }
     })
   }
@@ -163,16 +169,29 @@ export class ProdutoComponent implements OnInit, OnDestroy {
 
   navegaParaCadastro(produto?: Produto) {
     this.router.navigate(['/produto/cadastro'], {
-      state: { produto: produto } 
+      state: { produto: produto }
     });
   }
 
   excluirProduto(id: number) {
     this.produtoService.excluiProduto(id).subscribe({
       next: () => {
+        this.comumService.openSuccessMessage('Sucesso!', 'O produto e seus registros correspondentes foram deletados com sucesso!')
         this.buscaProdutos();
       }
     })
+  }
+
+  lazyLoadEvent(event: {
+    event: TableLazyLoadEvent
+  }) {
+    const first = event.event.first ?? 0;
+    const rows = event.event.rows ?? this.limitDadosProdutos;
+    const page = rows > 0 ? Math.floor(first / rows) + 1 : 1;
+    this.pageProdutos = page;
+    this.limitDadosProdutos = rows;
+
+    this.buscaProdutos();
   }
 
   get codigo() { return this.produtoForm.controls.codigo; }
