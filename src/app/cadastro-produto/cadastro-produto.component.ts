@@ -6,11 +6,15 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { FileUploadModule } from 'primeng/fileupload';
+import { ImageModule } from 'primeng/image';
 import { InputTextModule } from 'primeng/inputtext';
 import { KeyFilterModule } from 'primeng/keyfilter';
 import { SelectModule } from 'primeng/select';
+import { TableLazyLoadEvent } from 'primeng/table';
 import { Subject } from 'rxjs';
 import { Loja } from '../models/loja';
+import { PaginationModel } from '../models/pagination.model';
 import { Produto } from '../models/produto';
 import { ProdutoLoja } from '../models/produto-Loja';
 import { ComumService } from '../services/comum.service';
@@ -18,8 +22,6 @@ import { LojaService } from '../services/loja.service';
 import { ProdutoLojaService } from '../services/produto-loja.service';
 import { ProdutoService } from '../services/produto.service';
 import { CustomTableComponent } from '../shared/custom-table/custom-table.component';
-import { TableLazyLoadEvent } from 'primeng/table';
-import { PaginationModel } from '../models/pagination.model';
 
 
 interface Column {
@@ -39,17 +41,19 @@ interface CreateProdutoDto {
   custo?: number;
 }
 
+export interface ImagemProduto {
+  imagemBase64: string
+}
+
 export interface CreateProdutoLojaDto {
   idProduto: number,
   idLoja: number,
   precoVenda: number
 }
 
-
-
 @Component({
   selector: 'app-cadastro-produto',
-  imports: [CommonModule, ButtonModule, ReactiveFormsModule, InputTextModule, CustomTableComponent, KeyFilterModule, ConfirmDialogModule, DialogModule, SelectModule],
+  imports: [CommonModule, ButtonModule, ReactiveFormsModule, InputTextModule, CustomTableComponent, KeyFilterModule, ConfirmDialogModule, DialogModule, SelectModule, ImageModule, FileUploadModule],
   providers: [ConfirmationService],
   templateUrl: './cadastro-produto.component.html',
   styleUrl: './cadastro-produto.component.css'
@@ -71,11 +75,12 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
   private produtoService = inject(ProdutoService);
   private lojaService = inject(LojaService);
   private comumService = inject(ComumService)
-
+  imageUrl: string = "";
   produtoForm!: FormGroup<{
     codigo: FormControl<number | null>;
     descricao: FormControl<string | null>;
     custo: FormControl<number | null>;
+    imagem: FormControl<File | null>;
   }>;
 
   lojaPrecoVendaForm!: FormGroup<{
@@ -123,14 +128,24 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
 
     if (this.produto) {
       this.inicializaValoresProduto();
+      this.consultaImagemProduto();
     }
 
   }
 
-  inicializaValoresProduto() {
+  private inicializaValoresProduto() {
     this.codigo.setValue(this.produto.id);
     this.descricao.setValue(this.produto.descricao);
     this.custo.setValue(this.produto.custo)
+  }
+
+  private consultaImagemProduto() {
+    this.produtoService.buscaImagemProduto(this.produto.id).subscribe({
+      next: (imagem: ImagemProduto) => {
+        this.produto.imagem = imagem.imagemBase64
+        this.imageUrl = imagem.imagemBase64
+      }
+    })
   }
 
   ngOnDestroy(): void {
@@ -147,7 +162,8 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
       ]),
       custo: new FormControl<number | null>(null, [
         Validators.min(0.01)
-      ])
+      ]),
+      imagem: new FormControl<File | null>(null)
     })
     this.codigo.disable();
 
@@ -211,19 +227,22 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
     let descricao = this.produto.descricao;
     let custo = this.produto.custo;
 
-    if (novaDescricao !== descricao || novoCusto !== custo) {
+    if (novaDescricao !== descricao || novoCusto !== custo || this.imageUrl !== this.produto.imagem) {
       this.atualizaProduto();
     }
   }
 
   private salvaProduto() {
-    let createProduto: CreateProdutoDto = {
-      descricao: this.descricao.value || ''
-    }
+    const formData = new FormData();
+    formData.append('descricao', this.descricao.value || '')
     if (this.custo.value) {
-      createProduto.custo = Number(this.custo.value)
+      formData.append('custo', this.custo.value.toString())
     }
-    this.produtoService.cadastraProduto(createProduto).subscribe({
+    if (this.imagem.value) {
+      formData.append('imagem', this.imagem.value);
+    }
+
+    this.produtoService.cadastraProduto(formData).subscribe({
       next: (produto: Produto) => {
         this.comumService.openSuccessMessage("Sucesso", "O produto foi salvo com sucesso!")
         this.produto = produto;
@@ -237,8 +256,14 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
       descricao: this.descricao.value || '',
       custo: Number(this.custo.value || 0)
     }
+    const formData = new FormData();
+    formData.append('descricao', this.descricao.value || '')
+    formData.append('custo', this.custo.value?.toString() || '0')
+    if (this.imagem.value) {
+      formData.append('imagem', this.imagem.value);
+    }
 
-    this.produtoService.atualizaProduto(createProduto, this.produto.id).subscribe({
+    this.produtoService.atualizaProduto(formData, this.produto.id).subscribe({
       next: (produto: Produto) => {
         this.comumService.openSuccessMessage("Sucesso", "O produto foi alterado com sucesso!")
         this.produto = produto,
@@ -402,10 +427,26 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
     }
   }
 
+  onUpload(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0]
+    if (file) {
+      this.exibeImagem(file)
+      this.imagem.setValue(file)
+    }
+  }
+
+  private exibeImagem(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.imageUrl = reader.result as string;
+    }
+    reader.readAsDataURL(file)
+  }
 
   get codigo() { return this.produtoForm.controls.codigo; }
   get descricao() { return this.produtoForm.controls.descricao; }
   get custo() { return this.produtoForm.controls.custo; }
+  get imagem() { return this.produtoForm.controls.imagem }
 
   get loja() { return this.lojaPrecoVendaForm.controls.loja };
   get precoVenda() { return this.lojaPrecoVendaForm.controls.precoVenda };

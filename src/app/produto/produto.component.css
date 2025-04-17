@@ -1,4 +1,8 @@
 section {
     display: flex;
     flex-direction: column;
+    padding-top: 50px;
+    width: 95%;
+    justify-self: center;
+
 }

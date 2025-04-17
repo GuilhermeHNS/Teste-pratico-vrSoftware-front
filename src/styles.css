@@ -29,9 +29,3 @@
     gap: 10px;
     flex-wrap: wrap;
 }
-
-section {
-    padding-top: 50px;
-    width: 95%;
-    justify-self: center;
-}

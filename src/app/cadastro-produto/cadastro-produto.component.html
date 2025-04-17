@@ -31,6 +31,16 @@
             (buttonClick)="handleButtonClick($event)" (lazyLoadEvent)="lazyLoadEvent($event)"></app-custom-table>
 
     </div>
+
+    <div class="image-upload-container" (click)="fileInput.click()">
+        <img *ngIf="imageUrl" [src]="imageUrl" class="preview-image" />
+        <div *ngIf="!imageUrl" class="placeholder">
+            <i class="pi pi-image" style="font-size: 2rem"></i>
+            <p>Clique para fazer upload da imagem</p>
+        </div>
+        <input #fileInput type="file" accept=".jpg,.jpeg,.png" style="display: none" (change)="onUpload($event)"/>
+    </div>
+
 </section>
 
 <p-confirmdialog />
