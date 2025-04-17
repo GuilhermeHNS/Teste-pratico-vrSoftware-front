@@ -18,6 +18,8 @@ import { LojaService } from '../services/loja.service';
 import { ProdutoLojaService } from '../services/produto-loja.service';
 import { ProdutoService } from '../services/produto.service';
 import { CustomTableComponent } from '../shared/custom-table/custom-table.component';
+import { TableLazyLoadEvent } from 'primeng/table';
+import { PaginationModel } from '../models/pagination.model';
 
 
 interface Column {
@@ -89,6 +91,10 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
   cols: Column[] = [];
   dialogPreco: boolean = false;
 
+  pageProdutos: number = 1;
+  limitDadosProdutos: number = 10;
+  totalRecords: number = 0;
+
   ngOnInit(): void {
     this.inicializaForm();
     this.cols = [
@@ -117,7 +123,6 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
 
     if (this.produto) {
       this.inicializaValoresProduto();
-      this.carregaProdutoLojaPorProduto(this.produto.id)
     }
 
   }
@@ -158,9 +163,10 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
   }
 
   private carregaProdutoLojaPorProduto(id: number) {
-    this.produtoLojaService.buscaProdutoLojaPorIdProduto(id).subscribe({
-      next: (produtoLoja: ProdutoLoja[]) => {
-        this.produtoLojaList = produtoLoja;
+    this.produtoLojaService.buscaProdutoLojaPorIdProduto(id, this.pageProdutos, this.limitDadosProdutos).subscribe({
+      next: (result: PaginationModel) => {
+        this.produtoLojaList = result.data;
+        this.totalRecords = result.total;
       }
     })
   }
@@ -380,6 +386,20 @@ export class CadastroProdutoComponent implements OnInit, OnDestroy {
         this.comumService.openSuccessMessage('Sucesso!', 'Registro criado com sucesso!')
       }
     })
+  }
+
+  lazyLoadEvent(event: {
+    event: TableLazyLoadEvent
+  }) {
+    if (this.produto) {
+      const first = event.event.first ?? 0;
+      const rows = event.event.rows ?? this.limitDadosProdutos;
+      const page = rows > 0 ? Math.floor(first / rows) + 1 : 1;
+      this.pageProdutos = page;
+      this.limitDadosProdutos = rows;
+
+      this.carregaProdutoLojaPorProduto(this.produto.id);
+    }
   }
 
 

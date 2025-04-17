@@ -1,9 +1,10 @@
-import { Injectable } from '@angular/core';
-import { environment } from '../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
-import { ProdutoLoja } from '../models/produto-Loja';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { CreateProdutoLojaDto } from '../cadastro-produto/cadastro-produto.component';
+import { PaginationModel } from '../models/pagination.model';
+import { ProdutoLoja } from '../models/produto-Loja';
 
 @Injectable({
   providedIn: 'root'
@@ -13,8 +14,11 @@ export class ProdutoLojaService {
 
   constructor(private http: HttpClient) { }
 
-  buscaProdutoLojaPorIdProduto(id: number): Observable<ProdutoLoja[]> {
-    return this.http.get<ProdutoLoja[]>(`${this.apiUrl}/produto/${id}`);
+  buscaProdutoLojaPorIdProduto(id: number, page: number, limit: number): Observable<PaginationModel> {
+    let params = new HttpParams();
+    params = params.append("page", page.toString());
+    params = params.append("limit", limit.toString());
+    return this.http.get<PaginationModel>(`${this.apiUrl}/produto/${id}`, { params: params });
   }
 
   apagaProdutoLoja(id: number): Observable<ProdutoLoja> {
